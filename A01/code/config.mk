@@ -1,5 +1,5 @@
 # Supported: GCC, CLANG, ICC
-TOOLCHAIN ?= GCC
+TOOLCHAIN ?= ICX
 # ENABLE_OPENMP ?= false
 
 #Feature options
