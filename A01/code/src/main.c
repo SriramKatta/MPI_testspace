@@ -14,6 +14,8 @@
 #include "allocate.h"
 #include "timing.h"
 
+#define HOST_NAME_MAX 256
+
 int main(int argc, char **argv) {
   if (argc == 1) {
     argv[1] = "";
