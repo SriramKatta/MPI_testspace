@@ -9,10 +9,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <mpi.h>
+#include <math.h>
 
 #include "timing.h"
 
-#define DX 1e-3;
+#define DX 1e-8;
 
 #define MPI_CALL(call)                                                         \
   {                                                                            \
@@ -53,23 +55,25 @@ int main(int argc, char **argv) {
   double start = rank * chunk;
   double end = start + chunk;
 
+  
   wcs = getTimeStamp();
-  double Pi_local = integrate(start, chunk);
-
+  double Pi_local = integrate(start, end);
+  // printf("rank %d | start %3.4lf | end %3.4lf | Pi local %3.4lf\n", rank, start, end, Pi_local);
+  
   // MPI_CALL(MPI_Barrier(MPI_COMM_WORLD));
 
   if (rank == 0) {
     Pi = Pi_local;
     for (size_t i = 1; i < size; i++) {
       double recv_pi = 0.0;
-      MPI_CALL(MPI_Recv(&recv_pi, 1, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD,
+      MPI_CALL(MPI_Recv(&recv_pi, 1, MPI_DOUBLE, i, 0, MPI_COMM_WORLD,
                         MPI_STATUS_IGNORE));
       Pi += recv_pi;
     }
   } else {
     MPI_CALL(MPI_Send(&Pi_local, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD));
   }
-
+Pi *= 4.0;
   wce = getTimeStamp();
   if (rank == 0)
     printf("Pi=%.15lf in %.3lf s \n", Pi, wce - wcs);
@@ -87,7 +91,7 @@ double integrate(double a, double b) {
 
   */
   double res = 0.0;
-  while (a < b) {
+  while (a <= b) {
     res += sqrt(1 - a * a);
     a += DX;
   }
