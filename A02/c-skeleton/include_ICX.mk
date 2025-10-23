@@ -1,4 +1,4 @@
-CC   = icx
+CC   = mpiicx
 GCC  = gcc
 LINKER = $(CC)
 
@@ -7,7 +7,7 @@ OPENMP   = -qopenmp
 endif
 
 VERSION  = --version
-CFLAGS   =  -fast -xHost -qopt-streaming-stores=always -std=c99 -ffreestanding $(OPENMP)
+CFLAGS   =  -O3 -xHost -qopt-zmm-usage=high -std=c99
 LFLAGS   = $(OPENMP)
 DEFINES  = -D_GNU_SOURCE
 INCLUDES =

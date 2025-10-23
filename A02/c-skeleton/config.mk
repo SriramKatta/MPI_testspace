@@ -1,6 +1,6 @@
 # Supported: GCC, CLANG, ICC
 TOOLCHAIN ?= ICX
-# ENABLE_OPENMP ?= false
+ENABLE_OPENMP ?= false
 
 #Feature options
 OPTIONS +=  -DARRAY_ALIGNMENT=64
