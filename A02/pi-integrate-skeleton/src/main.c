@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
   } else {
     MPI_CALL(MPI_Send(&Pi_local, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD));
   }
-Pi *= 4.0;
+  Pi *= 4.0;
   wce = getTimeStamp();
   if (rank == 0)
     printf("Pi=%.15lf in %.3lf s \n", Pi, wce - wcs);
