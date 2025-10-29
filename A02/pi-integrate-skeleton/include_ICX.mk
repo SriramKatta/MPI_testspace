@@ -1,5 +1,5 @@
 CC   = mpiicx
-GCC  = gcc
+GCC  = icx
 LINKER = $(CC)
 
 ifeq ($(ENABLE_OPENMP),true)
