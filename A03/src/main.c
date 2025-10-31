@@ -9,9 +9,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <mpi.h>
 
 #include "allocate.h"
 #include "timing.h"
+#include "util.h"
 
 extern double dmvm(double* restrict y,
     const double* restrict a,
@@ -21,6 +23,9 @@ extern double dmvm(double* restrict y,
 
 int main(int argc, char** argv)
 {
+    int rank =0;
+    int size =1;
+    MPI_Init(&argc, &argv);
 
     size_t bytesPerWord = sizeof(double);
     size_t N            = 0;
@@ -56,6 +61,12 @@ int main(int argc, char** argv)
     double flops = (double)2.0 * N * N * iter;
     // # iterations, problem size, flop rate, walltime
     printf("%zu %zu %.2f %.2f\n", iter, N, 1.0E-06 * flops / walltime, walltime);
+
+    free(a);
+    free(x);
+    free(y);
+
+    MPI_Finalize();
 
     return EXIT_SUCCESS;
 }
