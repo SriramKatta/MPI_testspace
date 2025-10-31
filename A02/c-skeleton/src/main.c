@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <mpi.h>
+#include "mpi.h"
 
 #include "affinity.h"
 #include "allocate.h"
@@ -47,4 +47,5 @@ int main(int argc, char** argv) {
     MPI_CALL(MPI_Comm_rank(MPI_COMM_WORLD, &rank));
     printf("Hello World! I am %d of %d\n", rank, size);
     MPI_CALL(MPI_Finalize());
-    return EXIT_SUCCESS; }
+    return EXIT_SUCCESS; 
+}
