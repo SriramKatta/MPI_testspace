@@ -25,7 +25,9 @@ int main(int argc, char** argv)
 {
     int rank =0;
     int size =1;
-    MPI_Init(&argc, &argv);
+    MPI_CALL(MPI_Init(&argc, &argv));
+    MPI_CALL(MPI_Comm_size(MPI_COMM_WORLD, &size));
+    MPI_CALL(MPI_Comm_rank(MPI_COMM_WORLD, &rank));
 
     size_t bytesPerWord = sizeof(double);
     size_t N            = 0;
@@ -38,21 +40,27 @@ int main(int argc, char** argv)
         N    = atoi(argv[1]);
         iter = atoi(argv[2]);
     } else {
+        if(rank == 0)
         printf("Usage: %s <N> <iter>\n", argv[0]);
+
+        MPI_CALL(MPI_Finalize());
         exit(EXIT_SUCCESS);
     }
+    
+    int Nlocal = rows_in_rank(rank, size, N);
+    int chunkstart = rows_start_of_rank(rank, size, N);
 
-    a = (double*)allocate(ARRAY_ALIGNMENT, N * N * bytesPerWord);
-    x = (double*)allocate(ARRAY_ALIGNMENT, N * bytesPerWord);
-    y = (double*)allocate(ARRAY_ALIGNMENT, N * bytesPerWord);
+    a = (double*)allocate(ARRAY_ALIGNMENT, Nlocal * N * bytesPerWord);
+    x = (double*)allocate(ARRAY_ALIGNMENT, Nlocal * bytesPerWord);
+    y = (double*)allocate(ARRAY_ALIGNMENT, Nlocal * bytesPerWord);
 
     // initialize arrays
-    for (int i = 0; i < N; i++) {
-        x[i] = (double)i;
+    for (int i = 0; i < Nlocal; i++) {
+        x[i] = (double)i + chunkstart;
         y[i] = 0.0;
 
         for (int j = 0; j < N; j++) {
-            a[i * N + j] = (double)j + i;
+            a[i * N + j] = (double)j + i + chunkstart;
         }
     }
 
@@ -66,7 +74,7 @@ int main(int argc, char** argv)
     free(x);
     free(y);
 
-    MPI_Finalize();
+    MPI_CALL(MPI_Finalize());
 
     return EXIT_SUCCESS;
 }
