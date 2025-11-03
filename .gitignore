@@ -7,3 +7,6 @@ exe-*
 *tex*
 *.tgz
 *.o*
+
+.vscode
+compile_commands.json
