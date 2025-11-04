@@ -12,9 +12,11 @@
 #include <mpi.h>
 #include <math.h>
 
+#define PI 3.14159265
+
 #include "timing.h"
 
-#define DX 1e-8;
+#define DX 1E-9;
 
 #define MPI_CALL(call)                                                         \
   {                                                                            \
@@ -76,7 +78,9 @@ int main(int argc, char **argv) {
   Pi *= 4.0;
   wce = getTimeStamp();
   if (rank == 0)
-    printf("Pi=%.15lf in %.3lf s \n", Pi, wce - wcs);
+    printf("Pi=%1.8lf in %.3lf s \n", Pi, wce - wcs);
+
+  MPI_CALL(MPI_Finalize());
   return EXIT_SUCCESS;
 }
 
@@ -91,7 +95,7 @@ double integrate(double a, double b) {
 
   */
   double res = 0.0;
-  while (a <= b) {
+  while (a < b) {
     res += sqrt(1 - a * a);
     a += DX;
   }
