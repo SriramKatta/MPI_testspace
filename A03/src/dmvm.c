@@ -33,31 +33,19 @@ void communicate(double *restrict x, int N, int rank, int size)
 }
 
 void dmvm_core(double *restrict y, const double *restrict a,
-               const double *restrict x, int rows, int cols)
+               const double *restrict x, int rows, int cols, int colstart)
 {
   for (int r = 0; r < rows; r++)
   {
-    for (int c = 0; c < cols; c++)
+    for (int c = colstart; c < colstart + cols; c++)
     {
-      y[r] += a[r * cols + c] * x[c];
+      y[r] += a[r * cols + c] * x[c - colstart];
     }
   }
-#ifdef CHECK
-  {
-    double sum = 0.0;
-
-    for (int i = 0; i < N; i++)
-    {
-      sum += y[i];
-      y[i] = 0.0;
-    }
-    fprintf(stderr, "Sum: %f\n", sum);
-  }
-#endif
 }
 
 double dmvm(double *restrict y, const double *restrict a,
-            const double *restrict x, int rows, int cols, int iter)
+            const double *restrict x, int N, int iter)
 {
   double ts, te;
   int size = 0;
@@ -66,43 +54,44 @@ double dmvm(double *restrict y, const double *restrict a,
   MPI_CALL(MPI_Comm_rank(MPI_COMM_WORLD, &rank));
   MPI_CALL(MPI_Comm_size(MPI_COMM_WORLD, &size));
 
-  int Nlocal = rows_in_rank(rank, size, cols);
-  int row_start = rows_start_of_rank(rank, size, cols);
-  int Ncurrent = Nlocal;
+  int Nlocal = rows_in_rank(rank, size, N);
+  int col_start = rows_start_of_rank(rank, size, N);
   int lnbr = lower_nbr(rank, size);
   int unbr = upper_nbr(rank, size);
 
-  ts = getTimeStamp();
+  ts = MPI_Wtime();
   for (int j = 0; j < iter; j++)
   {
-    for (int rot = 0; rot < size; ++rot)
+    int Ncurrent = Nlocal;
+    int rankcurrent = rank;
+
+    for (int roti = 0; roti < size; roti++)
     {
-      for (int r = 0; r < row_start + Ncurrent; r++)
+      dmvm_core(y, a, x, N, Ncurrent, col_start);
+
+      col_start += Ncurrent;
+      if (col_start > N)
       {
-        for (int c = 0; c < row_start + Nlocal; c++)
-        {
-          y[r] += a[r * cols + c] * x[c - row_start];
-        }
+        col_start = 0;
       }
 
-      row_start += Nlocal;
-      if (row_start >= cols)
-      {
-        row_start = 0;
-      }
-      int lrank = lower_nbr(rank, size);
+      rankcurrent = lower_nbr(rankcurrent, size);
 
-      Ncurrent = rows_in_rank(rank, size, cols);
+      Ncurrent = rows_in_rank(rankcurrent, size, N);
 
-      // communicate(x, cols, rank, size);
-      // funtion to perform ring shift of x vector
-      if (rot != size - 1)
+      if (roti != size - 1)
       {
-        MPI_CALL(MPI_Sendrecv_replace(x, (cols / size) + (cols % size) ? 1 : 0, MPI_DOUBLE, unbr, 0, lnbr, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE));
+        MPI_CALL(MPI_Sendrecv_replace((void *)x,
+                                      (N / size) + ((N % size) ? 1 : 0),
+                                      MPI_DOUBLE,
+                                      unbr, 0,
+                                      lnbr, 0,
+                                      MPI_COMM_WORLD,
+                                      MPI_STATUS_IGNORE));
       }
     }
   }
-  te = getTimeStamp();
+  te = MPI_Wtime();
 
   return te - ts;
 }
