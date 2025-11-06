@@ -18,7 +18,8 @@
 extern double dmvm(double *restrict y, const double *restrict a,
                    const double *restrict x, int Nlocal, int N, int iter);
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
   int rank = 0;
   int size = 1;
   MPI_CALL(MPI_Init(&argc, &argv));
@@ -32,10 +33,13 @@ int main(int argc, char **argv) {
   double t0, t1;
   double walltime;
 
-  if (argc > 2) {
+  if (argc > 2)
+  {
     N = atoi(argv[1]);
     iter = atoi(argv[2]);
-  } else {
+  }
+  else
+  {
     if (rank == 0)
       printf("Usage: %s <N> <iter>\n", argv[0]);
 
@@ -51,22 +55,26 @@ int main(int argc, char **argv) {
   y = (double *)allocate(ARRAY_ALIGNMENT, Nlocal * bytesPerWord);
 
   // initialize arrays
-  for (int i = 0; i < Nlocal; i++) {
+  for (int i = 0; i < Nlocal; i++)
+  {
     x[i] = (double)(i + chunkstart);
     y[i] = 0.0;
 
-    for (int j = 0; j < N; j++) {
+    for (int j = 0; j < N; j++)
+    {
       a[i * N + j] = (double)(j + i + chunkstart);
     }
   }
 
   walltime = dmvm(y, a, x, Nlocal, N, iter);
 
-  // double flops = (double)2.0 * N * N * iter;
-  // // # iterations, problem size, flop rate, walltime
-  // if(rank == 0)
-  // printf("%zu %zu %.2f %.2f\n", iter, N, 1.0E-06 * flops / walltime,
-  // walltime);
+  double flops = (double)2.0 * N * N * iter;
+  // # iterations, size,problem size, flop rate, walltime
+  if (rank == 0)
+  {
+    printf("RES | %zu %d %zu %.2f %.2f\n", iter, size, N, 1.0E-06 * flops / walltime,
+           walltime);
+  }
 
   free(a);
   free(x);
