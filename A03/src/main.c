@@ -51,8 +51,8 @@ int main(int argc, char **argv)
   int chunkstart = rows_start_of_rank(rank, size, N);
 
   a = (double *)allocate(ARRAY_ALIGNMENT, Nlocal * N * bytesPerWord);
-  x = (double *)allocate(ARRAY_ALIGNMENT, Nlocal * bytesPerWord);
-  y = (double *)allocate(ARRAY_ALIGNMENT, Nlocal * bytesPerWord);
+  x = (double *)allocate(ARRAY_ALIGNMENT, Nlocal + ((N % szie) ? 1 : 0) * bytesPerWord);
+  y = (double *)allocate(ARRAY_ALIGNMENT, Nlocal + ((N % szie) ? 1 : 0) * bytesPerWord);
 
   // initialize arrays
   for (int i = 0; i < Nlocal; i++)
