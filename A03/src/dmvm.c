@@ -44,50 +44,75 @@ void dmvm_core(double *restrict y, const double *restrict a,
   }
 }
 
-double dmvm(double *restrict y, const double *restrict a,
-            const double *restrict x, int N, int iter)
+double dmvm(double *restrict y,
+            const double *restrict a,
+            double *restrict x,
+            int N,
+            int Nlocal,
+            int iter)
 {
   double ts, te;
-  int size = 0;
-  int rank = 1;
+  int rank, size;
+  MPI_Status status;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  MPI_CALL(MPI_Comm_rank(MPI_COMM_WORLD, &rank));
-  MPI_CALL(MPI_Comm_size(MPI_COMM_WORLD, &size));
+  int num = N / size;
+  int rest = N % size;
 
-  int Nlocal = rows_in_rank(rank, size, N);
-  int col_start = rows_start_of_rank(rank, size, N);
-  int lnbr = lower_nbr(rank, size);
-  int unbr = upper_nbr(rank, size);
+  int upperNeighbor = upper_nbr(rank, size);
+  int lowerNeighbor = lower_nbr(rank, size);
+  int cs = rows_start_of_rank(rank, size, N);
 
   ts = MPI_Wtime();
   for (int j = 0; j < iter; j++)
   {
-    int Ncurrent = Nlocal;
-    int rankcurrent = rank;
+    int currentN = Nlocal;
+    int rankCurrent = rank;
 
-    for (int roti = 0; roti < size; roti++)
+    // loop over RHS ring shifts
+    for (int rot = 0; rot < size; rot++)
     {
-      dmvm_core(y, a, x, N, Ncurrent, col_start);
 
-      col_start += Ncurrent;
-      if (col_start > N)
+      // local DMVM
+      for (int r = 0; r < Nlocal; r++)
       {
-        col_start = 0;
+        for (int c = cs; c < cs + currentN; c++)
+        {
+          y[r] = y[r] + a[r * N + c] * x[c - cs];
+        }
       }
 
-      rankcurrent = lower_nbr(rankcurrent, size);
-
-      Ncurrent = rows_in_rank(rankcurrent, size, N);
-
-      if (roti != size - 1)
+      // ringshift communication
+      cs += currentN;
+      if (cs >= N)
       {
-        MPI_CALL(MPI_Sendrecv_replace((void *)x,
-                                      (N / size) + ((N % size) ? 1 : 0),
-                                      MPI_DOUBLE,
-                                      unbr, 0,
-                                      lnbr, 0,
-                                      MPI_COMM_WORLD,
-                                      MPI_STATUS_IGNORE));
+        cs = 0; // wrap around
+      }
+
+      rankCurrent++;
+      if (rankCurrent == size)
+      {
+        rankCurrent = 0;
+      }
+      currentN = rows_in_rank(rankCurrent, size, N);
+
+      if (rot != (size - 1))
+      {
+        // We send upwards towards lower ranks
+        MPI_Send(x, num + (rest ? 1 : 0), MPI_DOUBLE, upperNeighbor, 0, MPI_COMM_WORLD);
+
+        MPI_Recv(x, num + (rest ? 1 : 0), MPI_DOUBLE, lowerNeighbor, 0, MPI_COMM_WORLD, &status);
+
+        // MPI_Sendrecv_replace(x,
+        //     num + (rest ? 1 : 0),
+        //     MPI_DOUBLE,
+        //     upperNeighbor,
+        //     0,
+        //     lowerNeighbor,
+        //     0,
+        //     MPI_COMM_WORLD,
+        //     &status);
       }
     }
   }
