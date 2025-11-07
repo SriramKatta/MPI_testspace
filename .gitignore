@@ -10,3 +10,6 @@ exe-*
 
 .vscode
 compile_commands.json
+
+SLURM_OUT_FILES
+results
