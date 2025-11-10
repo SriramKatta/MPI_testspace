@@ -50,11 +50,10 @@ double dmvm(double *restrict y,
     int currentN = Nlocal;
     int rankCurrent = rank;
 
-    // loop over RHS ring shifts
     for (int rot = 0; rot < size; rot++)
     {
 
-      // local DMVM
+  
       dmvm_core(Nlocal, cs, currentN, y, a, N, x);
 
       cs += currentN;

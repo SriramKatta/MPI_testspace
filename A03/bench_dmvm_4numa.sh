@@ -20,13 +20,13 @@ make
 mkdir -p results
 
 MAT_SIZES=("1000 1000000" "4000 100000" "10000 10000" "20000 5000")
-RES_FILE="results/intra_numa_${SLURM_JOB_ID}.csv"
+RES_FILE="results/inter_numa_${SLURM_JOB_ID}.csv"
 
 echo "# iterations, procs, problem size, flop rate, walltime" > $RES_FILE
 
 for MAT_SIZE in "${MAT_SIZES[@]}"
 do
-    for NP in {1..18}
+    for NP in {18..72..18}
     do
         echo "start for NP : $NP for mat size and iter $MAT_SIZE" 
         likwid-mpirun -mpi slurm \
