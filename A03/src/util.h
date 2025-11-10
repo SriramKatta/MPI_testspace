@@ -13,28 +13,28 @@
   "--------------------------------------------------------------------------" \
   "--\n"
 
-#define MPI_CALL(MPIFUNCCALL)                                             \
-  {                                                                       \
-    int mpi_status = MPIFUNCCALL;                                         \
-    if (MPI_SUCCESS != mpi_status)                                        \
-    {                                                                     \
-      char mpi_error_string[MPI_MAX_ERROR_STRING];                        \
-      int mpi_error_string_length = 0;                                    \
-      MPI_Error_string(mpi_status, mpi_error_string,                      \
-                       &mpi_error_string_length);                         \
-      if (NULL != mpi_error_string)                                       \
-        fprintf(stderr,                                                   \
-                "ERROR: MPI call \"%s\" in line %d of file %s failed "    \
-                "with %s "                                                \
-                "(%d).\n",                                                \
+#define MPI_CALL(MPIFUNCCALL)                                                    \
+  {                                                                              \
+    int mpi_status = MPIFUNCCALL;                                                \
+    if (MPI_SUCCESS != mpi_status)                                               \
+    {                                                                            \
+      char mpi_error_string[MPI_MAX_ERROR_STRING];                               \
+      int mpi_error_string_length = 0;                                           \
+      MPI_Error_string(mpi_status, mpi_error_string,                             \
+                       &mpi_error_string_length);                                \
+      if (NULL != mpi_error_string)                                              \
+        fprintf(stderr,                                                          \
+                "ERROR: MPI call \"%s\" in line %d of file %s failed "           \
+                "with %s "                                                       \
+                "(%d).\n",                                                       \
                 #MPIFUNCCALL, __LINE__, __FILE__, mpi_error_string, mpi_status); \
-      else                                                                \
-        fprintf(stderr,                                                   \
-                "ERROR: MPI call \"%s\" in line %d of file %s failed "    \
-                "with %d.\n",                                             \
+      else                                                                       \
+        fprintf(stderr,                                                          \
+                "ERROR: MPI call \"%s\" in line %d of file %s failed "           \
+                "with %d.\n",                                                    \
                 #MPIFUNCCALL, __LINE__, __FILE__, mpi_status);                   \
-      exit(mpi_status);                                                   \
-    }                                                                     \
+      exit(mpi_status);                                                          \
+    }                                                                            \
   }
 
 #ifndef MIN

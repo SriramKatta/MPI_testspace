@@ -2,7 +2,8 @@
 #
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=72
-#SBATCH --time=1:30:00
+#SBATCH --time=0:30:00
+#SBATCH --cpu-freq=2000000-2400000:performance
 #SBATCH --job-name=single_numa_dmvm
 #SBATCH --output=./SLURM_OUT_FILES/out/%j_%x.out
 #SBATCH --error=./SLURM_OUT_FILES/err/%j_%x.err
@@ -18,20 +19,20 @@ make
 
 mkdir -p results
 
-MAT_SIZES=("1000 300" "4000 300" "10000 5" "20000 2")
-RES_FILE="results/intra_num_${SLURM_JOB_ID}"
+MAT_SIZES=("1000 800" "4000 300" "10000 20" "20000 20")
+RES_FILE="results/intra_num_${SLURM_JOB_ID}.csv"
 
 echo "# iterations, procs, problem size, flop rate, walltime" > $RES_FILE
 
 for MAT_SIZE in "${MAT_SIZES[@]}"
 do
-    for NP in {1..17}
+    for NP in {1..18}
     do
         echo "start for NP : $NP for mat size and iter $MAT_SIZE" 
         likwid-mpirun -mpi slurm \
                       -n $NP  ./exe-ICX $MAT_SIZE \
                       | grep "RES" \
-                      | awk '{print $3, $4, $5, $6}' \
+                      | awk '{printf "%s,%s,%s,%s,%s\n", $3, $4, $5, $6, $7}' \
                       >> $RES_FILE
     done
 done

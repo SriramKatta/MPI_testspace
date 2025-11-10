@@ -1,6 +1,11 @@
 # Supported: GCC, CLANG, ICC
 TAG ?= ICX
 ENABLE_OPENMP ?= false
+COMM_NB ?= false
+
+ifeq ($(ENABLE_OPENMP),true)
+	OPTIONS += -DNB_COMMUICATION
+endif
 
 #Feature options
 OPTIONS +=  -DARRAY_ALIGNMENT=64
