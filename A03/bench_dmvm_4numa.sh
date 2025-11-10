@@ -2,8 +2,8 @@
 #
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=72
-#SBATCH --time=0:30:00
-#SBATCH --cpu-freq=2000000-2400000:performance
+#SBATCH --time=10:00:00
+#SBATCH --cpu-freq=2000000-2000000:performance
 #SBATCH --job-name=single_numa_dmvm
 #SBATCH --output=./SLURM_OUT_FILES/out/%j_%x.out
 #SBATCH --error=./SLURM_OUT_FILES/err/%j_%x.err
