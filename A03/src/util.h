@@ -13,6 +13,12 @@
   "--------------------------------------------------------------------------" \
   "--\n"
 
+#ifdef NDEBUG
+
+#define MPI_CALL(MPIFUNCCALL)
+
+#else
+
 #define MPI_CALL(MPIFUNCCALL)                                                    \
   {                                                                              \
     int mpi_status = MPIFUNCCALL;                                                \
@@ -36,6 +42,7 @@
       exit(mpi_status);                                                          \
     }                                                                            \
   }
+#endif
 
 #ifndef MIN
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
