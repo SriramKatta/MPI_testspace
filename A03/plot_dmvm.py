@@ -27,4 +27,6 @@ proc_ticks = sorted(df["procs"].unique())
 plt.xticks(proc_ticks)
 
 plt.tight_layout()
-plt.savefig(f"{sys.argv[1]}.png", dpi=300)
+outfname = sys.argv[1].split('.csv')[0]
+plt.savefig(f"{outfname}.png", dpi=300)
+print(f"Saved {outfname}.png")
