@@ -15,12 +15,15 @@
 
 #ifdef NDEBUG
 
-#define MPI_CALL(MPIFUNCCALL)
+#define MPI_CALL(MPIFUNCCALL) \
+  {                           \
+    MPIFUNCCALL;              \
+  }
 
 #else
 
 #define MPI_CALL(MPIFUNCCALL)                                                    \
-{                                                                              \
+  {                                                                              \
     int mpi_status = MPIFUNCCALL;                                                \
     if (MPI_SUCCESS != mpi_status)                                               \
     {                                                                            \
