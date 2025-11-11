@@ -3,9 +3,12 @@ TAG ?= ICX
 ENABLE_OPENMP ?= false
 COMM_NB ?= false
 
-ifeq ($(ENABLE_OPENMP),true)
+ifeq ($(COMM_NB),true)
 	OPTIONS += -DNB_COMMUICATION
 endif
+
+# uncommnet while benchmarking to prevent MPI_CALL check
+OPTIONS +=  -DNDEBUG
 
 #Feature options
 OPTIONS +=  -DARRAY_ALIGNMENT=64

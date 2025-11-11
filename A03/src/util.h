@@ -20,7 +20,7 @@
 #else
 
 #define MPI_CALL(MPIFUNCCALL)                                                    \
-  {                                                                              \
+{                                                                              \
     int mpi_status = MPIFUNCCALL;                                                \
     if (MPI_SUCCESS != mpi_status)                                               \
     {                                                                            \
