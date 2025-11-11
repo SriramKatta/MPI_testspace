@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "allocate.h"
 #include "util.h"
 
 inline void dmvm_core(int Nlocal, int cs, int currentN,
@@ -23,6 +24,13 @@ inline void dmvm_core(int Nlocal, int cs, int currentN,
   }
 }
 
+inline void swap_buffer(double **buff1, double **buff2)
+{
+  double *tmpbuff = *buff1;
+  *buff1 = *buff2;
+  *buff2 = tmpbuff;
+}
+
 double dmvm(double *restrict y,
             const double *restrict a,
             double *restrict x,
@@ -30,6 +38,13 @@ double dmvm(double *restrict y,
             int Nlocal,
             int iter)
 {
+  double *xbuff[2];
+  xbuff[0] = x;
+#ifdef NB_COMMUICATION
+  MPI_Request requests[2];
+  double *xtbuff = (double *)allocate(ARRAY_ALIGNMENT, (Nlocal + 1) * sizeof(double));
+  xbuff[1] = xtbuff;
+#endif
 
   int rank, size;
 
@@ -52,10 +67,21 @@ double dmvm(double *restrict y,
 
     for (int rot = 0; rot < size; rot++)
     {
+#ifdef NB_COMMUICATION
+      if (rot != (size - 1))
+      {
+        MPI_CALL(MPI_Isend(xbuff[0], num + (rest ? 1 : 0), MPI_DOUBLE,
+                           upperNeighbor, 0, MPI_COMM_WORLD, &requests[0]));
 
-  
+        MPI_CALL(MPI_Irecv(xbuff[1], num + (rest ? 1 : 0), MPI_DOUBLE,
+                           lowerNeighbor, 0, MPI_COMM_WORLD, &requests[1]));
+      }
+
+#endif
+
       dmvm_core(Nlocal, cs, currentN, y, a, N, x);
 
+      // set up comm
       cs += currentN;
       if (cs >= N)
       {
@@ -66,6 +92,13 @@ double dmvm(double *restrict y,
 
       currentN = rows_in_rank(rankCurrent, size, N);
 
+#ifdef NB_COMMUICATION
+      if (rot != (size - 1))
+      {
+        MPI_Waitall(2, requests, MPI_STATUS_IGNORE);
+        swap_buffer(&xbuff[0], &xbuff[1]);
+      }
+#else
       if (rot != (size - 1))
       {
         if (rank % 2) // to prevent dead locking
@@ -85,6 +118,7 @@ double dmvm(double *restrict y,
                             upperNeighbor, 0, MPI_COMM_WORLD));
         }
       }
+#endif
     }
   }
   double te = MPI_Wtime();
