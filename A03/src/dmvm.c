@@ -79,7 +79,7 @@ double dmvm(double *restrict y,
 
 #endif
 
-      dmvm_core(Nlocal, cs, currentN, y, a, N, x);
+      dmvm_core(Nlocal, cs, currentN, y, a, N, xbuff[0]);
 
       // set up comm
       cs += currentN;
