@@ -50,12 +50,14 @@ int main(int argc, char **argv)
     double startTime = getTimeStamp();
     solve(&solver);
     double endTime = getTimeStamp();
-    writeResult(&solver, "p.dat");
+    // writeResult(&solver, "p.dat");
+    getResult(&solver);
+    
     if (rank == 0)
     {
         printf("Walltime %.2fs\n", endTime - startTime);
     }
-    
+
     MPI_CALL(MPI_Finalize());
     return EXIT_SUCCESS;
 }
