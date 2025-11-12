@@ -8,7 +8,8 @@
 #define __SOLVER_H_
 #include "parameter.h"
 
-typedef struct {
+typedef struct
+{
     double dx, dy;
     double ys;
     int imax, jmax;
@@ -21,8 +22,8 @@ typedef struct {
     int itermax;
 } Solver;
 
-extern void initSolver(Solver*, Parameter*, int problem);
-extern void getResult(Solver*);
-extern void writeResult(Solver*, char*);
-extern void solve(Solver*);
+extern void initSolver(Solver *, Parameter *, int problem);
+extern void getResult(Solver *);
+extern void writeResult(Solver *, double *, char *);
+extern void solve(Solver *);
 #endif
