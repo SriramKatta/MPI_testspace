@@ -97,7 +97,7 @@ void getResult(Solver *solver)
                          MPI_COMM_WORLD));
     if (solver->rank == 0)
     {
-        writeResult(solver, pfull,"p.dat");
+        writeResult(solver, pfull, "p.dat");
         free(pfull);
     }
 }
@@ -176,6 +176,45 @@ void initSolver(Solver *solver, Parameter *params, int problem)
     }
 }
 
+// makes it easier to implement blocking to better improve performance
+double stencil_5pt(Solver *solver)
+{
+    double res = 0.0;
+
+    int imax = solver->imax;
+    int jmaxlocal = solver->jmaxLocal;
+    double *p = solver->p;
+    double *rhs = solver->rhs;
+    double dx2 = solver->dx * solver->dx;
+    double dy2 = solver->dy * solver->dy;
+    double idx2 = 1.0 / dx2;
+    double idy2 = 1.0 / dy2;
+    double factor = solver->omega * 0.5 * (dx2 * dy2) / (dx2 + dy2);
+
+    double L2cachebytes = 1.25 * 1000 * 1000; // cache size in bytes
+    int collimit = L2cachebytes / 48;
+    collimit = MIN(collimit, imax + 1);
+
+    for (int colstart = 1; colstart < imax + 1; colstart += collimit)
+    {
+        int colend = MIN(colstart + collimit, imax +1);
+        // adapt for mpi
+        for (int j = 1; j < jmaxlocal + 1; j++)
+        {
+            for (int i = colstart; i < colend; ++i)
+            {
+                double r = RHS(i, j) -
+                           ((P(i - 1, j) - 2.0 * P(i, j) + P(i + 1, j)) * idx2 +
+                            (P(i, j - 1) - 2.0 * P(i, j) + P(i, j + 1)) * idy2);
+
+                P(i, j) -= (factor * r);
+                res += (r * r);
+            }
+        }
+    }
+    return res;
+}
+
 void solve(Solver *solver)
 {
     int imax = solver->imax;
@@ -196,22 +235,10 @@ void solve(Solver *solver)
 
     while ((res >= epssq) && (it < itermax))
     {
-        res = 0.0;
+
         exchange(solver);
 
-        // adapt for mpi
-        for (int j = 1; j < jmaxlocal + 1; j++)
-        {
-            for (int i = 1; i < imax + 1; i++)
-            {
-                double r = RHS(i, j) -
-                           ((P(i - 1, j) - 2.0 * P(i, j) + P(i + 1, j)) * idx2 +
-                            (P(i, j - 1) - 2.0 * P(i, j) + P(i, j + 1)) * idy2);
-
-                P(i, j) -= (factor * r);
-                res += (r * r);
-            }
-        }
+        res = stencil_5pt(solver);
 
         // adapt for mpi
         for (int i = 1; i < imax + 1; i++)
@@ -252,7 +279,7 @@ void solve(Solver *solver)
     }
 }
 
-void writeResult(Solver *solver, double *p,char *filename)
+void writeResult(Solver *solver, double *p, char *filename)
 {
     int imax = solver->imax;
     int jmax = solver->jmax;
