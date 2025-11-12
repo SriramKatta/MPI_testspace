@@ -12,15 +12,14 @@
 #define HLINE "----------------------------------------------------------------------------\n"
 
 #ifndef MIN
-#define MIN(x,y) ((x)<(y)?(x):(y))
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
 #endif
 #ifndef MAX
-#define MAX(x,y) ((x)>(y)?(x):(y))
+#define MAX(x, y) ((x) > (y) ? (x) : (y))
 #endif
 #ifndef ABS
 #define ABS(a) ((a) >= 0 ? (a) : -(a))
 #endif
-
 
 #ifdef NDEBUG
 
@@ -40,7 +39,7 @@
       int mpi_error_string_length = 0;                                           \
       MPI_Error_string(mpi_status, mpi_error_string,                             \
                        &mpi_error_string_length);                                \
-      if (NULL != mpi_error_string)                                              \
+      if (!mpi_error_string)                                                     \
         fprintf(stderr,                                                          \
                 "ERROR: MPI call \"%s\" in line %d of file %s failed "           \
                 "with %s "                                                       \
