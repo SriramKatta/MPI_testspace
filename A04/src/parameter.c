@@ -12,47 +12,51 @@
 #include "util.h"
 #define MAXLINE 4096
 
-void initParameter(Parameter* param)
+void initParameter(Parameter *param)
 {
     param->xlength = 1.0;
     param->ylength = 1.0;
-    param->imax    = 100;
-    param->jmax    = 100;
+    param->imax = 100;
+    param->jmax = 100;
     param->itermax = 1000;
-    param->eps     = 0.0001;
-    param->omg     = 1.8;
+    param->eps = 0.0001;
+    param->omg = 1.8;
 }
 
-void readParameter(Parameter* param, const char* filename)
+void readParameter(Parameter *param, const char *filename)
 {
-    FILE* fp = fopen(filename, "r");
+    FILE *fp = fopen(filename, "r");
     char line[MAXLINE];
     int i;
 
-    if (!fp) {
+    if (!fp)
+    {
         fprintf(stderr, "Could not open parameter file: %s\n", filename);
         exit(EXIT_FAILURE);
     }
 
-    while (!feof(fp)) {
+    while (!feof(fp))
+    {
         line[0] = '\0';
         fgets(line, MAXLINE, fp);
         for (i = 0; line[i] != '\0' && line[i] != '#'; i++)
             ;
         line[i] = '\0';
 
-        char* tok = strtok(line, " ");
-        char* val = strtok(NULL, " ");
+        char *tok = strtok(line, " ");
+        char *val = strtok(NULL, " ");
 
-#define PARSE_PARAM(p, f)                                                                \
-    if (strncmp(tok, #p, sizeof(#p) / sizeof(#p[0]) - 1) == 0) {                         \
-        param->p = f(val);                                                               \
+#define PARSE_PARAM(p, f)                                      \
+    if (strncmp(tok, #p, sizeof(#p) / sizeof(#p[0]) - 1) == 0) \
+    {                                                          \
+        param->p = f(val);                                     \
     }
 #define PARSE_STRING(p) PARSE_PARAM(p, strdup)
-#define PARSE_INT(p)    PARSE_PARAM(p, atoi)
-#define PARSE_REAL(p)   PARSE_PARAM(p, atof)
+#define PARSE_INT(p) PARSE_PARAM(p, atoi)
+#define PARSE_REAL(p) PARSE_PARAM(p, atof)
 
-        if (tok != NULL && val != NULL) {
+        if (tok != NULL && val != NULL)
+        {
             PARSE_REAL(xlength);
             PARSE_REAL(ylength);
             PARSE_INT(imax);
@@ -66,13 +70,17 @@ void readParameter(Parameter* param, const char* filename)
     fclose(fp);
 }
 
-void printParameter(Parameter* param)
+void printParameter(Parameter *param)
 {
     printf("Parameters:\n");
     printf("Geometry data:\n");
     printf("\tDomain box size (x, y): %e, %e\n", param->xlength, param->ylength);
     printf("\tCells (x, y): %d, %d\n", param->imax, param->jmax);
-    printf("Iterative solver parameters:\n");
+#if SOR_RB_SOLVER
+    printf("Iterative SOR solver parameters:\n");
+#else
+    printf("Iterative STD solver parameters:\n");
+#endif
     printf("\tMax iterations: %d\n", param->itermax);
     printf("\tepsilon (stopping tolerance) : %e\n", param->eps);
     printf("\tomega (SOR relaxation): %e\n", param->omg);
