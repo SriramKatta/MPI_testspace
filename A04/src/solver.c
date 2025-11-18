@@ -191,7 +191,7 @@ double solver_core(Solver *solver)
     double idy2 = 1.0 / dy2;
     double factor = solver->omega * 0.5 * (dx2 * dy2) / (dx2 + dy2);
 
-    double L2cachebytes = 1.25 * 1000 * 1000; // cache size in bytes
+    double L2cachebytes = 1.25 * 1000.0 * 1000.0; // cache size in bytes
     int collimit = L2cachebytes / 48;
     collimit = MIN(collimit, imax + 1);
 
@@ -215,7 +215,7 @@ double solver_core(Solver *solver)
     return res;
 }
 
-double solver_RB_core(Solver *solver, COLOUR col)
+double solver_RB_core(Solver *solver, COLOUR colour)
 {
     double res = 0.0;
 
@@ -229,14 +229,11 @@ double solver_RB_core(Solver *solver, COLOUR col)
     double idy2 = 1.0 / dy2;
     double factor = solver->omega * 0.5 * (dx2 * dy2) / (dx2 + dy2);
 
-    double L2cachebytes = 1.25 * 1000 * 1000; // cache size in bytes
-    int collimit = L2cachebytes / 48;
-    collimit = MIN(collimit, imax + 1);
-
-    // adapt for mpi
+    int step = ((colour == RED) ? 0 : 1);
+    int colstart = step + 1;
     for (int j = 1; j < jmaxlocal + 1; j++)
     {
-        for (int i = 1; i < imax; ++i)
+        for (int i = colstart; i < imax + 1; i += 2)
         {
             double r = RHS(i, j) -
                        ((P(i - 1, j) - 2.0 * P(i, j) + P(i + 1, j)) * idx2 +
@@ -245,6 +242,7 @@ double solver_RB_core(Solver *solver, COLOUR col)
             P(i, j) -= (factor * r);
             res += (r * r);
         }
+        colstart = 3 - colstart; // swap between 1 and 2
     }
 
     return res;
