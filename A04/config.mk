@@ -2,6 +2,9 @@
 TAG ?= ICC
 ENABLE_OPENMP ?= false
 
+# Un commnet for RED-BLACK solver
+OPTIONS +=  -DSOR_RB_SOLVER
+
 #Feature options
 OPTIONS +=  -DARRAY_ALIGNMENT=64
 #OPTIONS +=  -DVERBOSE_AFFINITY
