@@ -22,8 +22,17 @@ typedef struct
     int itermax;
 } Solver;
 
+typedef enum {
+    RED = 0,
+    BLACK = 1
+}COLOUR;
+
 extern void initSolver(Solver *, Parameter *, int problem);
 extern void getResult(Solver *);
 extern void writeResult(Solver *, double *, char *);
+extern double solver_core(Solver *);
 extern void solve(Solver *);
+extern void apply_bdy_condition(Solver *);
+extern void solveRB(Solver *);
+extern double solver_RB_core(Solver* , COLOUR);
 #endif

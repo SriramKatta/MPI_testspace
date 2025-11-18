@@ -145,7 +145,7 @@ void initSolver(Solver *solver, Parameter *params, int problem)
     double *p = solver->p;
     double *rhs = solver->rhs;
 
-    // adapt for MPI case
+    // adapted for MPI case
     for (int j = 0; j < jmaxlocal + 2; j++)
     {
         for (int i = 0; i < imax + 2; i++)
@@ -176,8 +176,8 @@ void initSolver(Solver *solver, Parameter *params, int problem)
     }
 }
 
-// makes it easier to implement blocking to better improve performance
-double stencil_5pt(Solver *solver)
+// makes it easier to implement cache blocking to better improve performance
+double solver_core(Solver *solver)
 {
     double res = 0.0;
 
@@ -197,7 +197,7 @@ double stencil_5pt(Solver *solver)
 
     for (int colstart = 1; colstart < imax + 1; colstart += collimit)
     {
-        int colend = MIN(colstart + collimit, imax +1);
+        int colend = MIN(colstart + collimit, imax + 1);
         // adapt for mpi
         for (int j = 1; j < jmaxlocal + 1; j++)
         {
@@ -215,6 +215,66 @@ double stencil_5pt(Solver *solver)
     return res;
 }
 
+double solver_RB_core(Solver *solver, COLOUR col)
+{
+    double res = 0.0;
+
+    int imax = solver->imax;
+    int jmaxlocal = solver->jmaxLocal;
+    double *p = solver->p;
+    double *rhs = solver->rhs;
+    double dx2 = solver->dx * solver->dx;
+    double dy2 = solver->dy * solver->dy;
+    double idx2 = 1.0 / dx2;
+    double idy2 = 1.0 / dy2;
+    double factor = solver->omega * 0.5 * (dx2 * dy2) / (dx2 + dy2);
+
+    double L2cachebytes = 1.25 * 1000 * 1000; // cache size in bytes
+    int collimit = L2cachebytes / 48;
+    collimit = MIN(collimit, imax + 1);
+
+    // adapt for mpi
+    for (int j = 1; j < jmaxlocal + 1; j++)
+    {
+        for (int i = 1; i < imax; ++i)
+        {
+            double r = RHS(i, j) -
+                       ((P(i - 1, j) - 2.0 * P(i, j) + P(i + 1, j)) * idx2 +
+                        (P(i, j - 1) - 2.0 * P(i, j) + P(i, j + 1)) * idy2);
+
+            P(i, j) -= (factor * r);
+            res += (r * r);
+        }
+    }
+
+    return res;
+}
+
+void apply_bdy_condition(Solver *solver)
+{
+    int imax = solver->imax;
+    double *p = solver->p;
+    int jmaxlocal = solver->jmaxLocal;
+    // adapt for mpi // boundary conditions
+    for (int i = 1; i < imax + 1; i++)
+    {
+        if (solver->rank == 0)
+        {
+            P(i, 0) = P(i, 1);
+        }
+        if (solver->rank == (solver->size - 1))
+        {
+            P(i, jmaxlocal + 1) = P(i, jmaxlocal);
+        }
+    }
+
+    for (int j = 1; j < jmaxlocal + 1; j++)
+    {
+        P(0, j) = P(1, j);
+        P(imax + 1, j) = P(imax, j);
+    }
+}
+
 void solve(Solver *solver)
 {
     int imax = solver->imax;
@@ -222,44 +282,30 @@ void solve(Solver *solver)
     int jmaxlocal = solver->jmaxLocal;
     double eps = solver->eps;
     int itermax = solver->itermax;
-    double dx2 = solver->dx * solver->dx;
-    double dy2 = solver->dy * solver->dy;
-    double idx2 = 1.0 / dx2;
-    double idy2 = 1.0 / dy2;
-    double factor = solver->omega * 0.5 * (dx2 * dy2) / (dx2 + dy2);
     double *p = solver->p;
-    double *rhs = solver->rhs;
     double epssq = eps * eps;
     int it = 0;
     double res = eps + 1.0;
 
+    MPI_Request req;
+
     while ((res >= epssq) && (it < itermax))
     {
-
         exchange(solver);
+#ifdef SOR_RB_SOLVER
+        res += solver_RB_core(solver, RED);
+        exchange(solver);
+        res += solver_RB_core(solver, BLACK);
+#else
+        res = solver_core(solver);
+#endif
 
-        res = stencil_5pt(solver);
+        MPI_CALL(MPI_Iallreduce(MPI_IN_PLACE, &res, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD, &req));
 
-        // adapt for mpi
-        for (int i = 1; i < imax + 1; i++)
-        {
-            if (solver->rank == 0)
-            {
-                P(i, 0) = P(i, 1);
-            }
-            if (solver->rank == (solver->size - 1))
-            {
-                P(i, jmaxlocal + 1) = P(i, jmaxlocal);
-            }
-        }
+        apply_bdy_condition(solver);
 
-        for (int j = 1; j < jmaxlocal + 1; j++)
-        {
-            P(0, j) = P(1, j);
-            P(imax + 1, j) = P(imax, j);
-        }
-
-        MPI_Allreduce(MPI_IN_PLACE, &res, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+        // termination condition collection
+        MPI_CALL(MPI_Wait(&req, MPI_STATUS_IGNORE));
         res = res / (double)(imax * jmax);
 #ifdef DEBUG
         if (solver->rank == 0)
@@ -278,6 +324,7 @@ void solve(Solver *solver)
                solver->omega);
     }
 }
+
 
 void writeResult(Solver *solver, double *p, char *filename)
 {
