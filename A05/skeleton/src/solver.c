@@ -914,24 +914,26 @@ void computeFG(Solver* solver)
     /* Check the indices for more intuition. Use isBoundary(solver, LEFT/RIGHT)   */
     /* to check if a rank has LEFT or RIGHT boundary.                             */
     /* ----------------------------- boundary of F --------------------------- */
-    if(isBoundary(solver, LEFT) || isBoundary(solver, RIGHT))
-    {
+    
         for (int j = 1; j < jmaxLocal + 1; j++) {
+        if(isBoundary(solver, LEFT))
             F(0, j)    = U(0, j);
-            F(imax, j) = U(imax, j);
+        if(isBoundary(solver, RIGHT))
+            F(imaxLocal, j) = U(imaxLocal, j);
         }
-    }
+    
     /* Adapt boundary conditons for G only for ranks with TOP and BOTTOM boundary */
     /* Check the indices for more intuition. Use isBoundary(solver, TOP/BOTTOM)   */
     /* to check if a rank has TOP or BOTTOM boundary.                             */
     /* ----------------------------- boundary of G --------------------------- */
-    if(isBoundary(solver, BOTTOM) || isBoundary(solver, TOP))
-    {
+
         for (int i = 1; i < imaxLocal + 1; i++) {
+            if(isBoundary(solver, BOTTOM))
             G(i, 0)    = V(i, 0);
-            G(i, jmax) = V(i, jmax);
+            if(isBoundary(solver, TOP))
+            G(i, jmaxLocal) = V(i, jmaxLocal);
         }
-    }
+    
 }
 
 /* TODO:DONE adapt to local size imaxLocal & jmaxLocal */
