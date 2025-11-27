@@ -1,6 +1,6 @@
 # Supported: GCC, CLANG, ICC
-TAG ?= CLANG
-ENABLE_OPENMP ?= false
+TAG ?= ICC
+ENABLE_OPENMP ?= true
 
 #Feature options
 OPTIONS +=  -DARRAY_ALIGNMENT=64
