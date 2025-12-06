@@ -151,7 +151,7 @@ static void assembleResult(Comm *c,
               MPI_DOUBLE,
               0,
               0,
-              c->comm;
+              c->comm,
               &requests[0]);
 
     /* rank 0 assembles the subdomains */
@@ -201,16 +201,16 @@ void commReduction(double *v, int op)
 {
 #if defined(_MPI)
     // fill:DONE
-    MPI_Op op = MPI_NO_OP;
+    MPI_Op mpi_op = MPI_NO_OP;
     if (op == MAX)
     {
-        op = MPI_MAX;
+        mpi_op = MPI_MAX;
     }
     else if (op == SUM)
     {
-        op = MPI_SUM
+        mpi_op = MPI_SUM;
     }
-    MPI_Allreduce(MPI_IN_PLACE, v, 1, MPI_DOUBLE, op, MPI_COMM_WORLD);
+    MPI_Allreduce(MPI_IN_PLACE, v, 1, MPI_DOUBLE, mpi_op, MPI_COMM_WORLD);
 #endif
 }
 
@@ -260,7 +260,7 @@ void commExchange(Comm *c, double *grid)
                            c->sbufferTypes,
                            grid,
                            counts,
-                           disps,
+                           displs,
                            c->rbufferTypes,
                            c->comm);
 #endif
@@ -323,7 +323,7 @@ void commShift(Comm *c, double *f, double *g, double *h)
     // fill:DONE
     MPI_Irecv(h,
               1,
-              c->sbufferTypes[FRONT],
+              c->rbufferTypes[FRONT],
               c->neighbours[FRONT],
               0,
               c->comm,
@@ -609,10 +609,33 @@ void commPartition(Comm *c, int kmax, int jmax, int imax)
 {
 #if defined(_MPI)
     // setup MPI cartesian topology
+    int dims[NDIMS] = {0, 0, 0};
+    int periods[NDIMS] = {0, 0, 0};
+    MPI_Dims_create(c->size, NDIMS, dims);
+    MPI_Cart_create(MPI_COMM_WORLD, NDIMS, dims, periods, 0, &c->comm);
+    MPI_Cart_shift(c->comm, ICORD, 1, &c->neighbours[LEFT], &c->neighbours[RIGHT]);
+    MPI_Cart_shift(c->comm, JCORD, 1, &c->neighbours[BOTTOM], &c->neighbours[TOP]);
+    MPI_Cart_shift(c->comm, KCORD, 1, &c->neighbours[FRONT], &c->neighbours[BACK]);
+    MPI_Cart_get(c->comm, NDIMS, c->dims, periods, c->coords);
+
+    // calculate local domain sizes
+    c->imaxLocal = sizeOfRank(c->coords[ICORD], c->dims[ICORD], imax);
+    c->jmaxLocal = sizeOfRank(c->coords[JCORD], c->dims[JCORD], jmax);
+    c->kmaxLocal = sizeOfRank(c->coords[KCORD], c->dims[KCORD], kmax);
 
     // setup buffer types for communication
     setupCommunication(c, LEFT, BULK);
-    // call for all other cases
+    setupCommunication(c, LEFT, HALO);
+    setupCommunication(c, RIGHT, BULK);
+    setupCommunication(c, RIGHT, HALO);
+    setupCommunication(c, BOTTOM, BULK);
+    setupCommunication(c, BOTTOM, HALO);
+    setupCommunication(c, TOP, BULK);
+    setupCommunication(c, TOP, HALO);
+    setupCommunication(c, FRONT, BULK);
+    setupCommunication(c, FRONT, HALO);
+    setupCommunication(c, BACK, BULK);
+    setupCommunication(c, BACK, HALO);
 #else
     c->imaxLocal = imax;
     c->jmaxLocal = jmax;
