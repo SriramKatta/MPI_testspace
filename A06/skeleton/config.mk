@@ -3,6 +3,10 @@ TAG ?= ICX
 ENABLE_MPI ?= true
 ENABLE_OPENMP ?= false
 
+ifeq ($(ENABLE_MPI),true)
+OPTIONS = -D_MPI
+endif
+
 #Feature options
 OPTIONS +=  -DARRAY_ALIGNMENT=64
 OPTIONS +=  -DVERBOSE
