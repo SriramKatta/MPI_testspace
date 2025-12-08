@@ -45,8 +45,8 @@ tau      0.5		# safety factor for time stepsize control (<0 constant delt)
 # Pressure Iteration Data:
 # -----------------------
 
-itermax  1000		# maximal number of pressure iteration in one time step
+itermax  5000		# maximal number of pressure iteration in one time step
 eps      0.001		# stopping tolerance for pressure iteration
-omg      1.8		# relaxation parameter for SOR iteration
+omg      1.4		# relaxation parameter for SOR iteration
 gamma    0.9		# upwind differencing factor gamma
 #===============================================================================
