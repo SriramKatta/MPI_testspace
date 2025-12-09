@@ -5,7 +5,7 @@
 #SBATCH -J single_numa_scale
 #SBATCH --output=SLURM_OUT_FILES/%x_%j.out
 #SBATCH --error=SLURM_ERR_FILES/%x_%j.err
-#SBATCH --time=0:10:00
+#SBATCH --time=01:00:00
 #SBATCH --export=NONE
 
 unset SLURM_EXPORT_ENV
