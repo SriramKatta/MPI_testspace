@@ -17,3 +17,5 @@ GCC
 ICC
 CLANG
 ICX
+
+benchmark_*
