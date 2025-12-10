@@ -168,7 +168,7 @@ static void assembleResult(Comm* c,
         }
     }
 
-    MPI_CALL(MPI_Waitall(numRequests, requests, MPI_STATUSES_IGNORE));
+    MPI_Waitall(numRequests, requests, MPI_STATUSES_IGNORE);
 }
 
 static int sum(int* sizes, int position)
@@ -247,50 +247,53 @@ void commExchange(Comm* c, double* grid)
 void commShift(Comm* c, double* f, double* g, double* h)
 {
 #if defined(_MPI)
-    MPI_Request requests[12] = { MPI_REQUEST_NULL,
-        MPI_REQUEST_NULL,
-        MPI_REQUEST_NULL,
-        MPI_REQUEST_NULL,
-        MPI_REQUEST_NULL,
-        MPI_REQUEST_NULL,
-        MPI_REQUEST_NULL,
+    MPI_Request requests[6] = { MPI_REQUEST_NULL,
         MPI_REQUEST_NULL,
         MPI_REQUEST_NULL,
         MPI_REQUEST_NULL,
         MPI_REQUEST_NULL,
         MPI_REQUEST_NULL };
 
-    /* shift G in J direction */
-    /* send to bottom neighbor */
-    MPI_Isend(g, 1, c->sbufferTypes[BOTTOM], c->neighbours[BOTTOM], 0, c->comm, &requests[0]);
-    /* receive from top neighbor */
-    MPI_Irecv(g, 1, c->rbufferTypes[TOP], c->neighbours[TOP], 0, c->comm, &requests[1]);
-    /* send to top neighbor */
-    MPI_Isend(g, 1, c->sbufferTypes[TOP], c->neighbours[TOP], 1, c->comm, &requests[2]);
-    /* receive from bottom neighbor */
-    MPI_Irecv(g, 1, c->rbufferTypes[BOTTOM], c->neighbours[BOTTOM], 1, c->comm, &requests[3]);
+    /* shift G */
+    /* receive ghost cells from bottom neighbor */
+    MPI_Irecv(g,
+        1,
+        c->rbufferTypes[BOTTOM],
+        c->neighbours[BOTTOM],
+        0,
+        c->comm,
+        &requests[0]);
 
-    /* shift F in I direction */
-    /* send to left neighbor */
-    MPI_Isend(f, 1, c->sbufferTypes[LEFT], c->neighbours[LEFT], 2, c->comm, &requests[4]);
-    /* receive from right neighbor */
-    MPI_Irecv(f, 1, c->rbufferTypes[RIGHT], c->neighbours[RIGHT], 2, c->comm, &requests[5]);
-    /* send to right neighbor */
-    MPI_Isend(f, 1, c->sbufferTypes[RIGHT], c->neighbours[RIGHT], 3, c->comm, &requests[6]);
-    /* receive from left neighbor */
-    MPI_Irecv(f, 1, c->rbufferTypes[LEFT], c->neighbours[LEFT], 3, c->comm, &requests[7]);
+    /* send ghost cells to top neighbor */
+    MPI_Isend(g, 1, c->sbufferTypes[TOP], c->neighbours[TOP], 0, c->comm, &requests[1]);
 
-    /* shift H in K direction */
-    /* send to front neighbor */
-    MPI_Isend(h, 1, c->sbufferTypes[FRONT], c->neighbours[FRONT], 4, c->comm, &requests[8]);
-    /* receive from back neighbor */
-    MPI_Irecv(h, 1, c->rbufferTypes[BACK], c->neighbours[BACK], 4, c->comm, &requests[9]);
-    /* send to back neighbor */
-    MPI_Isend(h, 1, c->sbufferTypes[BACK], c->neighbours[BACK], 5, c->comm, &requests[10]);
-    /* receive from front neighbor */
-    MPI_Irecv(h, 1, c->rbufferTypes[FRONT], c->neighbours[FRONT], 5, c->comm, &requests[11]);
+    /* shift F */
+    /* receive ghost cells from left neighbor */
+    MPI_Irecv(f, 1, c->rbufferTypes[LEFT], c->neighbours[LEFT], 1, c->comm, &requests[2]);
 
-    MPI_CALL(MPI_Waitall(12, requests, MPI_STATUSES_IGNORE));
+    /* send ghost cells to right neighbor */
+    MPI_Isend(f,
+        1,
+        c->sbufferTypes[RIGHT],
+        c->neighbours[RIGHT],
+        1,
+        c->comm,
+        &requests[3]);
+
+    /* shift H */
+    /* receive ghost cells from front neighbor */
+    MPI_Irecv(h,
+        1,
+        c->rbufferTypes[FRONT],
+        c->neighbours[FRONT],
+        2,
+        c->comm,
+        &requests[4]);
+
+    /* send ghost cells to back neighbor */
+    MPI_Isend(h, 1, c->sbufferTypes[BACK], c->neighbours[BACK], 2, c->comm, &requests[5]);
+
+    MPI_Waitall(6, requests, MPI_STATUSES_IGNORE);
 #endif
 }
 
