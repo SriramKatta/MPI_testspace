@@ -8,6 +8,7 @@
 #define __VTKWRITER_H_
 #include <stdio.h>
 
+#include "comm.h"
 #include "grid.h"
 
 typedef enum VtkFormat { ASCII = 0, BINARY } VtkFormat;
@@ -15,7 +16,12 @@ typedef enum VtkFormat { ASCII = 0, BINARY } VtkFormat;
 typedef struct VtkOptions {
     VtkFormat fmt;
     Grid grid;
+    Comm comm;
+#if defined(_MPI)
+    MPI_File fh;
+#else
     FILE* fh;
+#endif
 } VtkOptions;
 
 typedef struct VtkVector {
